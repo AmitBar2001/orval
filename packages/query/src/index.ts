@@ -107,6 +107,7 @@ const SVELTE_QUERY_DEPENDENCIES: GeneratorDependency[] = [
       { name: 'createQuery', values: true },
       { name: 'createInfiniteQuery', values: true },
       { name: 'createMutation', values: true },
+      { name: 'skipToken', values: true },
       { name: 'CreateQueryOptions' },
       {
         name: 'CreateInfiniteQueryOptions',
@@ -194,6 +195,7 @@ const REACT_QUERY_DEPENDENCIES: GeneratorDependency[] = [
       { name: 'useSuspenseInfiniteQuery', values: true },
       { name: 'useMutation', values: true },
       { name: 'useQueryClient', values: true },
+      { name: 'skipToken', values: true },
       { name: 'UseQueryOptions' },
       { name: 'DefinedInitialDataOptions' },
       { name: 'UndefinedInitialDataOptions' },
@@ -297,6 +299,7 @@ const VUE_QUERY_DEPENDENCIES: GeneratorDependency[] = [
       { name: 'useQuery', values: true },
       { name: 'useInfiniteQuery', values: true },
       { name: 'useMutation', values: true },
+      { name: 'skipToken', values: true },
       { name: 'UseQueryOptions' },
       { name: 'UseInfiniteQueryOptions' },
       { name: 'UseMutationOptions' },
@@ -461,11 +464,15 @@ const generateQueryOptions = ({
   options,
   type,
   outputClient,
+  preferSkipToken,
+  hasQueryV5,
 }: {
   params: GetterParams;
   options?: object | boolean;
   type: QueryType;
   outputClient: OutputClient | OutputClientFunc;
+  preferSkipToken?: boolean;
+  hasQueryV5: boolean;
 }) => {
   if (options === false) {
     return '';
@@ -489,6 +496,18 @@ const generateQueryOptions = ({
     }
 
     return '...queryOptions';
+  }
+
+  if (preferSkipToken && hasQueryV5) {
+    return `${
+      !isObject(options) || !options.hasOwnProperty('queryFn')
+        ? isVue(outputClient)
+          ? `...{ queryFn: computed(() => !!(${params
+              .map(({ name }) => `unref(${name})`)
+              .join(' && ')}) ? queryFn : skipToken)},`
+          : `...{ queryFn: !!(${params.map(({ name }) => name).join(' && ')}) ? queryFn : skipToken},`
+        : ''
+    }${queryConfig} ...queryOptions`;
   }
 
   return `${
@@ -866,6 +885,7 @@ const generateQueryImplementation = ({
   useQuery,
   useInfinite,
   useInvalidate,
+  preferSkipToken,
 }: {
   queryOption: {
     name: string;
@@ -901,6 +921,7 @@ const generateQueryImplementation = ({
   useQuery?: boolean;
   useInfinite?: boolean;
   useInvalidate?: boolean;
+  preferSkipToken?: boolean;
 }) => {
   const queryPropDefinitions = toObjectString(props, 'definition');
   const definedInitialDataQueryPropsDefinitions = toObjectString(
@@ -1064,6 +1085,8 @@ const generateQueryImplementation = ({
     options,
     type,
     outputClient,
+    preferSkipToken,
+    hasQueryV5,
   });
 
   const queryOptionsFnName = camel(
@@ -1536,6 +1559,7 @@ ${override.query.shouldExportQueryKey ? 'export ' : ''}const ${queryOption.query
           useQuery: query.useQuery,
           useInfinite: query.useInfinite,
           useInvalidate: query.useInvalidate,
+          preferSkipToken: query.preferSkipToken,
         })
       );
     }, '')}

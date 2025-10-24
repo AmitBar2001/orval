@@ -651,6 +651,9 @@ const normalizeQueryOptions = (
     ...(isUndefined(queryOptions.useInvalidate)
       ? {}
       : { useInvalidate: queryOptions.useInvalidate }),
+    ...(isUndefined(queryOptions.preferSkipToken)
+      ? {}
+      : { preferSkipToken: queryOptions.preferSkipToken }),
     ...(isUndefined(queryOptions.useQuery)
       ? {}
       : { useQuery: queryOptions.useQuery }),

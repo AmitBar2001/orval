@@ -564,4 +564,19 @@ export default defineConfig({
       target: '../specifications/petstore.yaml',
     },
   },
+  preferSkipToken: {
+    output: {
+      target: '../generated/react-query/prefer-skip-token/endpoints.ts',
+      schemas: '../generated/react-query/prefer-skip-token/model',
+      client: 'react-query',
+      override: {
+        query: {
+          preferSkipToken: true,
+        },
+      },
+    },
+    input: {
+      target: '../specifications/petstore.yaml',
+    },
+  },
 });
